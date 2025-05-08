@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>body { font-family: Arial; padding: 20px; }</style>
+  </head>
+  <body>
+    <h2>學生成績趨勢圖</h2>
+    <form onsubmit="handleChart(this); return false;">
+      學號：<input name="id" required><br>
+      密碼：<input name="password" type="password" required><br>
+      <input type="submit" value="查詢成績圖表">
+    </form>
+    <div id="chart_div" style="width: 100%; height: 400px;"></div>
+    <div id="message" style="margin-top: 20px;"></div>
+
+    <script>
+      google.charts.load('current', {'packages':['corechart']});
+
+      function handleChart(form) {
+        const user = {
+          id: form.id.value,
+          password: form.password.value
+        };
+        google.script.run
+          .withSuccessHandler(drawChart)
+          .withFailureHandler(err => {
+            document.getElementById('message').innerText = '❌ 錯誤：' + err.message;
+          })
+          .getStudentGrades(user);
+      }
+
+      function drawChart(result) {
+        if (!result.success) {
+          document.getElementById('message').innerText = "❌ 登入失敗，請檢查帳密";
+          return;
+        }
+
+        const grades = result.grades;
+        if (grades.length === 0) {
+          document.getElementById('message').innerText = "⚠️ 尚未有成績資料";
+          return;
+        }
+
+        google.charts.setOnLoadCallback(() => {
+          const data = new google.visualization.DataTable();
+          data.addColumn('string', '週次');
+          data.addColumn('number', '分數');
+
+          grades.forEach(g => {
+            data.addRow([`第${g.week}週`, g.score]);
+          });
+
+          const options = {
+            title: '每週成績趨勢',
+            curveType: 'function',
+            legend: { position: 'bottom' },
+            vAxis: { minValue: 0, maxValue: 100 }
+          };
+
+          const chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+          chart.draw(data, options);
+        });
+      }
+    </script>
+  </body>
+</html>

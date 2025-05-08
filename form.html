@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Arial; padding: 20px; max-width: 600px; margin: auto; }
+      input, textarea { margin-bottom: 10px; width: 100%; }
+    </style>
+  </head>
+  <body>
+    <h2>老師輸入學生成績</h2>
+    <form onsubmit="handleSubmit(this); return false;">
+      <label>學號：</label><br>
+      <input name="id" required><br>
+
+      <label>姓名：</label><br>
+      <input name="name" required><br>
+
+      <label>第幾週：</label><br>
+      <input name="week" type="number" required><br>
+
+      <label>分數：</label><br>
+      <input name="score" type="number" required><br>
+
+      <label>想問的建議問題：</label><br>
+      <textarea name="prompt" rows="3" required>請根據以下成績分析學生的學習狀況與未來建議</textarea><br>
+
+      <input type="submit" value="送出">
+    </form>
+
+    <div id="result" style="margin-top: 15px;"></div>
+
+    <script>
+      function handleSubmit(form) {
+        const data = {
+          id: form.id.value,
+          name: form.name.value,
+          week: form.week.value,
+          score: form.score.value,
+          prompt: form.prompt.value
+        };
+
+        google.script.run
+          .withSuccessHandler(() => {
+            document.getElementById('result').innerText = '✅ 成績與分析問題已送出';
+            form.reset();
+          })
+          .withFailureHandler(err => {
+            document.getElementById('result').innerText = '❌ 發送失敗：' + err.message;
+          })
+          .submitGrade(data);
+      }
+    </script>
+  </body>
+</html>

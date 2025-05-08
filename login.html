@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Arial; padding: 20px; }
+      input, textarea { margin-bottom: 10px; width: 300px; }
+    </style>
+  </head>
+  <body>
+    <h2>學生登入查詢成績</h2>
+    <form onsubmit="handleLogin(this); return false;">
+      學號：<input name="id" required><br>
+      密碼：<input name="password" type="password" required><br>
+      <input type="submit" value="登入">
+    </form>
+
+    <div id="result" style="margin-top: 20px;"></div>
+
+    <script>
+      let currentUser = null;
+
+      function handleLogin(form) {
+        const user = {
+          id: form.id.value,
+          password: form.password.value
+        };
+        currentUser = user;
+        google.script.run
+          .withSuccessHandler(showGrades)
+          .withFailureHandler(err => {
+            document.getElementById('result').innerText = "❌ 錯誤：" + err.message;
+          })
+          .checkLogin(user);
+      }
+
+      function showGrades(result) {
+        if (!result.success) {
+          document.getElementById('result').innerHTML = "<p style='color:red;'>❌ 帳號或密碼錯誤</p>";
+          return;
+        }
+
+        const grades = result.grades;
+        let html = "<h3>📋 成績列表</h3><ul>";
+        grades.forEach(g => {
+          html += `<li>第 ${g.week} 週：${g.score} 分</li>`;
+        });
+        html += "</ul>";
+
+        html += `
+          <h3>🧠 想問系統的建議：</h3>
+          <textarea id="studentPrompt" rows="3" placeholder="輸入你想問的問題，例如：我進步了嗎？"></textarea><br>
+          <button onclick="askGPT()">送出問題</button>
+          <div id="analysis" style="margin-top: 10px;"></div>
+        `;
+
+        document.getElementById('result').innerHTML = html;
+      }
+
+      function askGPT() {
+        const prompt = document.getElementById('studentPrompt').value;
+        if (!prompt || !currentUser) return;
+
+        document.getElementById('analysis').innerText = "⏳ 分析中...";
+
+        google.script.run
+          .withSuccessHandler(res => {
+            document.getElementById('analysis').innerHTML = `<h4>分析結果：</h4><p>${res}</p>`;
+          })
+          .withFailureHandler(err => {
+            document.getElementById('analysis').innerText = "❌ 錯誤：" + err.message;
+          })
+          .analyzeByStudent(currentUser, prompt);
+      }
+    </script>
+  </body>
+</html>
